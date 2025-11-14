@@ -1,5 +1,6 @@
 using Api.Domain;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.ChangeTracking;
 
 namespace Api.Data;
 
@@ -33,6 +34,12 @@ public class AppDbContext : DbContext
 
             // Indexes
             entity.HasIndex(e => e.Email).IsUnique();
+            entity.Property(e => e.Email)
+                .HasConversion(v => v.ToLower(), v => v)
+                .Metadata.SetComparer(new ValueComparer<string>(
+                    (c1, c2) => string.Equals(c1, c2, StringComparison.OrdinalIgnoreCase),
+                    c => c.ToUpper().GetHashCode(),
+                    c => c));
             entity.HasIndex(e => new { e.FirstName, e.LastName });
             entity.HasIndex(e => e.IsActive);
             entity.HasIndex(e => e.CreatedAt);

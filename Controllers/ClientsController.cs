@@ -134,14 +134,16 @@ public class ClientsController : ControllerBase
             return BadRequest(new { errors = validationResult.ToDictionary() });
         }
 
+        var email = createDto.Email.ToLowerInvariant();
         var existingClient = await _context.Clients
-            .FirstOrDefaultAsync(c => c.Email == createDto.Email);
+            .FirstOrDefaultAsync(c => c.Email == email);
         if (existingClient != null)
         {
             return Conflict(new { message = "A client with this email already exists." });
         }
 
         var client = _mapper.Map<Client>(createDto);
+        client.Email = email;
         client.Id = Guid.NewGuid();
         client.CreatedAt = DateTimeOffset.UtcNow;
         client.UpdatedAt = DateTimeOffset.UtcNow;
@@ -171,10 +173,11 @@ public class ClientsController : ControllerBase
             return NotFound(new { message = $"Client with ID {id} not found." });
         }
 
-        if (client.Email != updateDto.Email)
+        var email = updateDto.Email.ToLowerInvariant();
+        if (client.Email != email)
         {
             var existingClient = await _context.Clients
-                .FirstOrDefaultAsync(c => c.Email == updateDto.Email && c.Id != id);
+                .FirstOrDefaultAsync(c => c.Email == email && c.Id != id);
             if (existingClient != null)
             {
                 return Conflict(new { message = "A client with this email already exists." });
@@ -182,6 +185,7 @@ public class ClientsController : ControllerBase
         }
 
         _mapper.Map(updateDto, client);
+        client.Email = email;
         client.UpdatedAt = DateTimeOffset.UtcNow;
 
         _context.Clients.Update(client);
